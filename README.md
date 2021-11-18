@@ -1,4 +1,11 @@
-http://ergast.com/mrd/
-https://ergast.com/api/f1/current.json
+# f1-bot
 
-https://dev.to/petereysermans/hosting-a-node-js-application-on-windows-with-iis-as-reverse-proxy-397b
+## Purpose
+- Gets the [schedule](https://ergast.com/api/f1/current.json) for the current F1 season from [ergast](http://ergast.com/mrd/)
+  
+- In a pinned message, on a selected channel, it displays:
+  - The time and place of the next event
+  - The *brief* results of the last event
+    - Top 3 places and selected *drivers-of-interest*
+  - The driver standings
+    - Top 2 places
