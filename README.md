@@ -9,3 +9,4 @@
     - Top 3 places and selected *drivers-of-interest*
   - The driver standings
     - Top 2 places
+- Sends reminders of upcoming events to selected server members

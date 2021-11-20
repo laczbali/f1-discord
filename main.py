@@ -1,56 +1,62 @@
 import discord
-import json
 import sys
-import requests
-from datetime import date
+import threading
+from threading import Thread
+import tasks, data
 
 if sys.version_info < (3, 10):
     print('Please upgrade your Python version to 3.10 or higher')
     sys.exit()
 
-# Load ENV variables
-env_file = open("env.json", "r")
-env_data = json.load(env_file)
+
+
+# -----------------------------------------------------------------------------
 
 # Load Discord client
 client = discord.Client()
 
-# Init schedule objects
-schedule_info = {
-    'data': None,
-    'last_successfull_sync': None,
-    'last_sync_ok' : None
-}
 
-# -----------------------------------------------------------------------------
 
+# Bot is logged-in
 @client.event
 async def on_ready():
+    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="/F1"))
     print(f'Client is ready')
 
+
+
+# Handle new messages on server
 @client.event
 async def on_message(message):
     try:
 
+        # Ignore messages from self
         if message.author == client.user:
             return
 
-        if not message.content.startswith('/f1'):
+        # Ignore messages not to the bot
+        if not (message.content.startswith('/f1') or message.content.startswith('/F1')):
             return
 
+        # First pass of message parsing
         content = message.content.replace('/f1 ', '')
+        content = message.content.replace('/F1 ', '')
         content_arr = content.split(' ')
         command = content_arr[0]
 
+        # Handle commands
         match command:
             case 'help':
                 await message.channel.send(
                 "**/f1 help** - Show this help message \n"
                 "**/f1 about** - Show information about the bot \n"
-                "**/f1 config [* channel] [* pin] [stream-url]** - Configure the bot \n"
-                    "\t * channel - Which channel should the bot send the schedule to \n"
-                    "\t * pin - true\\false - Should the bot pin the message \n"
-                    "\t stream-url - The url where the race can be streamed \n"
+                "**/f1 config [setting] [value]** - Configure the bot \n"
+                    "\t The **setting** can be: \n"
+                    "\t   *channel* - Which channel should the bot send the schedule to \n"
+                    "\t   *pin* - Should the bot pin the message (true or false) \n"
+                    "\t   *stream-url* - The url where the race can be streamed \n"
+                    "\t   *alert* - Users to alert about upcoming events (eg: user1,user2) \n"
+                    "\t   *drivers* - List of drivers-of-interest (eg: BOT,PER) \n"
                 "**/f1 status** - Provides the status of the synced data"
                 )
 
@@ -58,25 +64,14 @@ async def on_message(message):
                 await message.channel.send('made by **blaczko#0134**')
         
             case 'config':
-                if len(content_arr) < 3:
-                    await message.channel.send('Please provide all necessary parameters. See **/f1 help** for more information**')
-                    return
-
-                channel_to_use = content_arr[1]
-                should_pin = (content_arr[2] == 'True' or content_arr[2] == 'true')
-                stream_url = None
-
-                if len(content_arr) > 3:
-                    stream_url = content_arr[3]
-
-                # TODO save config
-
-                await message.channel.send('Config saved')
+                # TODO parse and save config
+                await message.channel.send('Saved')
 
             case 'status':
+                # TODO should return a more general status (eg other tasks, uptime, config values)
                 await message.channel.send(
-                    'Last sync status: **' +  ("OK" if schedule_info['last_sync_ok'] else "FAIL") + '**\n'
-                    'Last succesful sync: **' + str(schedule_info['last_successfull_sync']) + "**"
+                    'Last sync status: **' +  ("OK" if data.schedule_info['last_sync_ok'] else "FAIL") + '**\n'
+                    'Last succesful sync: **' + str(data.schedule_info['last_successfull_sync']) + "**"
                 )
 
             case _:
@@ -84,37 +79,36 @@ async def on_message(message):
 
     except Exception as e:
         #TODO log error
+        print("Error handling message\n" + str(e))
         await message.channel.send('Something went wrong :worried:\n')
+
 
 # -----------------------------------------------------------------------------
 
-# Runs the discord client
 def run():
-    client.run(env_data["auth"]["bot_token"])
+    """
+    Runs the discord client
+    """
 
-# Gets the schedule from the API
-def get_schedule():
-    # HTTP request to API
-    try:
-        response = requests.get(env_data["f1_api"]["base_url"] + env_data["f1_api"]["schedule"])
-        schedule = response.json()['MRData']['RaceTable'].asd
-        schedule_info['data'] = schedule
+    client.run(data.env_data["auth"]["bot_token"])
 
-        schedule_info['last_sync_ok'] = True
-        schedule_info['last_successfull_sync'] = date.today().strftime("%Y-%m-%d")
-    except Exception as e:
-        #TODO log error
-        schedule_info['last_sync_ok'] = False
-        return None
 
-# Periodically gets the data from the API & posts messages
+
 def init_scheduling():
-    #TODO implement
-    pass
+    """
+    Starts the scheduling process, which will periodically get the data from the API, and run relevant functions
+    """
+    
+    Thread(target=tasks.get_event_schedule, name="EventSchedule", daemon=True).start()
+    Thread(target=tasks.get_driver_standings, name="DriverStandings", daemon=True).start()
+    Thread(target=tasks.get_race_results, name="RaceResults", daemon=True).start()
+    Thread(target=tasks.post_messages, name="PostMessages", daemon=True).start()
+
+
 
 # -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    get_schedule()
+    #TODO load server-config
     init_scheduling()
     run()
