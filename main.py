@@ -60,7 +60,10 @@ async def on_message(message):
                 )
 
             case 'about':
-                await message.channel.send('made by **blaczko#0134**')
+                await message.channel.send(
+                    "made by **blaczko#0134**\n"
+                    "https://github.com/laczbali/f1-discord"
+                )
         
             case 'config':
                 if len(content_arr) < 3:
@@ -113,7 +116,7 @@ def init_scheduling():
     Thread(target=tasks.get_event_schedule, name="EventSchedule", daemon=True, args=[data_cont]).start()
     Thread(target=tasks.get_driver_standings, name="DriverStandings", daemon=True).start()
     Thread(target=tasks.get_race_results, name="RaceResults", daemon=True).start()
-    Thread(target=tasks.post_messages, name="PostMessages", daemon=True).start()
+    Thread(target=tasks.post_messages, name="PostMessages", daemon=True, args=[data_cont]).start()
 
 
 

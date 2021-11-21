@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 
 class Data():
@@ -14,6 +15,12 @@ class Data():
         'last_successfull_sync': None,
         'last_sync_ok' : None
     }
+
+    def get_next_event(self):
+        events = self.schedule_info['data']['Races']
+        # filter out past events
+        upcoming = list(filter(lambda e: datetime.fromisoformat(e['date'] + 'T' + e['time'][:-1]) >= datetime.now(), events))
+        return upcoming[0]
 
     # -----------------------------------------------------------------------------
 
