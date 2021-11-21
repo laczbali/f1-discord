@@ -1,9 +1,9 @@
 import requests
 import datetime
 from datetime import date
-import data
 import time
-
+from data import Data
+import typing
 
 
 # ------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ def _post_messages():
 
 # ------------------------------------------------------------------------------
 
-def get_event_schedule():
+def get_event_schedule(data: Data):
     """
     Task for getting the race schedule from the API
     It runs immediately after the startup, and then on every monday
@@ -28,7 +28,7 @@ def get_event_schedule():
     
     while 1:
         if next_run_datetime != None and next_run_datetime <= datetime.datetime.now():
-            _get_event_schedule()
+            _get_event_schedule(data)
             # set next run time to next monday
             next_run_datetime = datetime.datetime.now() + datetime.timedelta(days=7-datetime.datetime.now().weekday())
 
@@ -36,7 +36,7 @@ def get_event_schedule():
 
     
 
-def _get_event_schedule():
+def _get_event_schedule(data: Data):
     """
     Gets the race schedule from the API
     """

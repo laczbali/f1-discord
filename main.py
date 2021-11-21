@@ -1,6 +1,5 @@
 import discord
 import sys
-import threading
 from threading import Thread
 import tasks, data
 
@@ -14,7 +13,6 @@ if sys.version_info < (3, 10):
 
 # Load Discord client
 client = discord.Client()
-
 
 
 # Bot is logged-in
@@ -40,7 +38,7 @@ async def on_message(message):
 
         # First pass of message parsing
         content = message.content.replace('/f1 ', '')
-        content = message.content.replace('/F1 ', '')
+        content = content.replace('/F1 ', '')
         content_arr = content.split(' ')
         command = content_arr[0]
 
@@ -57,6 +55,7 @@ async def on_message(message):
                     "\t   *stream-url* - The url where the race can be streamed \n"
                     "\t   *alert* - Users to alert about upcoming events (eg: user1,user2) \n"
                     "\t   *drivers* - List of drivers-of-interest (eg: BOT,PER) \n"
+                "**/f1 current-config** - Shows the currently saved configuration"
                 "**/f1 status** - Provides the status of the synced data"
                 )
 
@@ -64,14 +63,26 @@ async def on_message(message):
                 await message.channel.send('made by **blaczko#0134**')
         
             case 'config':
-                # TODO parse and save config
+                if len(content_arr) < 3:
+                    await message.channel.send('Please provide a setting and a value')
+                    return
+
+                if content_arr[1] not in ['channel', 'pin', 'stream-url', 'alert', 'drivers']:
+                    await message.channel.send('Please provide a valid setting')
+                    return
+
+                data_cont.update_server_config(message.guild.id, content_arr[1], content_arr[2])
                 await message.channel.send('Saved')
 
+            case 'current-config':
+                current_config = data_cont.get_server_config(message.guild.id)
+                await message.channel.send(current_config if current_config else 'No configuration found')
+            
             case 'status':
                 # TODO should return a more general status (eg other tasks, uptime, config values)
                 await message.channel.send(
-                    'Last sync status: **' +  ("OK" if data.schedule_info['last_sync_ok'] else "FAIL") + '**\n'
-                    'Last succesful sync: **' + str(data.schedule_info['last_successfull_sync']) + "**"
+                    'Last sync status: **' +  ("OK" if data_cont.schedule_info['last_sync_ok'] else "FAIL") + '**\n'
+                    'Last succesful sync: **' + str(data_cont.schedule_info['last_successfull_sync']) + "**"
                 )
 
             case _:
@@ -90,7 +101,7 @@ def run():
     Runs the discord client
     """
 
-    client.run(data.env_data["auth"]["bot_token"])
+    client.run(data_cont.env_data["auth"]["bot_token"])
 
 
 
@@ -99,7 +110,7 @@ def init_scheduling():
     Starts the scheduling process, which will periodically get the data from the API, and run relevant functions
     """
     
-    Thread(target=tasks.get_event_schedule, name="EventSchedule", daemon=True).start()
+    Thread(target=tasks.get_event_schedule, name="EventSchedule", daemon=True, args=[data_cont]).start()
     Thread(target=tasks.get_driver_standings, name="DriverStandings", daemon=True).start()
     Thread(target=tasks.get_race_results, name="RaceResults", daemon=True).start()
     Thread(target=tasks.post_messages, name="PostMessages", daemon=True).start()
@@ -108,7 +119,8 @@ def init_scheduling():
 
 # -----------------------------------------------------------------------------
 
+data_cont = data.Data()
+
 if __name__ == "__main__":
-    #TODO load server-config
     init_scheduling()
     run()
