@@ -53,10 +53,10 @@ async def on_message(message):
                 "**/f1 config [setting] [value]** - Configure the bot \n"
                     "\t The **setting** can be: \n"
                     "\t   *channel* - Which channel should the bot send the schedule to \n"
-                    "\t   *stream-url* - The url where the race can be streamed \n"
-                    "\t   *drivers* - List of drivers-of-interest (eg: BOT,PER) \n"
+                    # "\t   *stream-url* - The url where the race can be streamed \n"
+                    # "\t   *drivers* - List of drivers-of-interest (eg: BOT,PER) \n"
                 "**/f1 current-config** - Shows the currently saved configuration"
-                "**/f1 status** - Provides the status of the synced data"
+                # "**/f1 status** - Provides the status of the synced data"
                 )
 
             case 'about':
@@ -74,11 +74,15 @@ async def on_message(message):
                     await message.channel.send('Please provide a valid setting')
                     return
 
-                data_cont.update_server_config(message.guild.id, content_arr[1], content_arr[2])
+                data_cont.update_user_config(message.guild.id, content_arr[1], content_arr[2])
                 await message.channel.send('Saved')
 
+                if content_arr[1] == 'channel':
+                    # Channel changed, update it right away
+                    data_cont.force_task_next_run('post_messages')
+
             case 'current-config':
-                current_config = data_cont.get_server_config(message.guild.id)
+                current_config = data_cont.get_user_config(message.guild.id)
                 await message.channel.send(current_config if current_config else 'No configuration found')
             
             case 'status':
@@ -104,7 +108,7 @@ def run():
     Runs the discord client
     """
 
-    client.run(data_cont.env_data["auth"]["bot_token"])
+    client.run(data_cont.get_env_variable("auth")["bot_token"])
 
 
 

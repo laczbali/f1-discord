@@ -5,8 +5,16 @@ class Data():
 
     # -----------------------------------------------------------------------------
 
-    env_file = open("env.json", "r")
-    env_data = json.load(env_file)
+    def get_env_variable(self, key):
+        env_file = open("env.json", "r")
+        env_data = json.load(env_file)
+        env_file.close()
+
+        try:
+            return env_data[key]
+        except:
+            return None
+
 
     # -----------------------------------------------------------------------------
 
@@ -27,14 +35,14 @@ class Data():
     user_configfile = open("user_config.json", "r")
     user_config_all = json.load(user_configfile)
 
-    def get_server_config(self, server_id):
+    def get_user_config(self, server_id):
         try:
             return list(filter(lambda x: x['server_id'] == server_id, self.user_config_all))[0]
         except:
             return None
 
 
-    def set_server_config(self, server_id, config):
+    def set_user_config(self, server_id, config):
         # filter out server from list
         new_config_list = list(filter(lambda x: x['server_id'] != server_id, self.user_config_all))
         # add new server config
@@ -46,11 +54,64 @@ class Data():
         self.user_config_all = new_config_list
 
 
-    def update_server_config(self, server_id, key, value):
-        config = self.get_server_config(server_id)
+    def update_user_config(self, server_id, key, value):
+        config = self.get_user_config(server_id)
 
         if config is None:
             config = { 'server_id': server_id }
 
         config[key] = value
-        self.set_server_config(server_id, config)
+        self.set_user_config(server_id, config)
+
+    # -----------------------------------------------------------------------------
+
+    try:
+        task_file = open("tasks.json", "r")
+        task_file.close()
+    except FileNotFoundError:
+        with open("tasks.json", "w") as f:
+            json.dump({}, f)
+
+
+    def get_task_next_run(self, task_name):
+        task_file = open("tasks.json", "r")
+        task_data = json.load(task_file)
+        task_file.close()
+
+        try:
+            return datetime.fromisoformat(task_data[task_name]['next_run'])
+        except:
+            return None
+
+
+    def get_task_arg(self, task_name, arg_name):
+        task_file = open("tasks.json", "r")
+        task_data = json.load(task_file)
+        task_file.close()
+
+        try:
+            return task_data[task_name]['args'][arg_name]
+        except:
+            return None
+
+
+    def set_task_next_run(self, task_name, next_run, args={}):
+        task_file = open("tasks.json", "r")
+        task_data = json.load(task_file)
+        task_file.close()
+
+        task_data[task_name] = { 'next_run': next_run.isoformat(), 'args': args }
+
+        with open("tasks.json", "w") as f:
+            json.dump(task_data, f)
+
+
+    def force_task_next_run(self, task_name):
+        task_file = open("tasks.json", "r")
+        task_data = json.load(task_file)
+        task_file.close()
+
+        task_data[task_name]['next_run'] = datetime.now().isoformat()
+
+        with open("tasks.json", "w") as f:
+            json.dump(task_data, f)

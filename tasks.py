@@ -11,8 +11,6 @@ import discord
 from discord import Client
 import asyncio
 
-# TODO change next run dates to be json based
-
 # ------------------------------------------------------------------------------
 
 async def post_messages(data: Data, client: Client):
@@ -21,10 +19,19 @@ async def post_messages(data: Data, client: Client):
     It runs on the tuesday of race week, and an hour before & after each event
     """
     # Wait with first run, so the schedule has time to load
-    next_run_datetime = datetime.datetime.now() + datetime.timedelta(seconds=10)
-    next_run_type = 'week_start'
+    await asyncio.sleep(10)
+
+    data.set_task_next_run(
+        'post_messages',
+        next_run = datetime.datetime.now(),
+        args = {'next_run_type': 'week_start'}
+    )
 
     while 1:
+        # get next run time & type
+        next_run_datetime = data.get_task_next_run('post_messages')
+        next_run_type = data.get_task_arg('post_messages', 'next_run_type')
+
         if next_run_datetime != None and next_run_datetime <= datetime.datetime.now():
             await _post_messages(data, client, next_run_type)
 
@@ -49,7 +56,14 @@ async def post_messages(data: Data, client: Client):
                 case _:
                     # unknown type, set to next Tuesday
                     next_run_datetime = datetime.datetime.now() + datetime.timedelta(days=8-datetime.datetime.now().weekday())
-                    next_run_type = 'week_start'                  
+                    next_run_type = 'week_start'
+
+            # set next run time & type
+            data.set_task_next_run(
+                'post_messages',
+                next_run = next_run_datetime,
+                args = {'next_run_type': next_run_type}
+            )               
 
         await asyncio.sleep(10)
 
@@ -92,11 +106,11 @@ async def _post_messages(data: Data, client: Client, run_type):
                     message = f"This week is **{nextevent['raceName']}** on **{nextevent['date']}** at **{nextevent['time'][:-4]}**\n\n"
                 # display qualifying results
                 if run_type == 'before_event':
-                    # TODO
+                    # TODO display qualifying results
                     pass
 
             # display results of previous event
-            # TODO
+            # TODO display results of previous event
 
             await channel.send(message)
             pass
@@ -115,13 +129,22 @@ def get_event_schedule(data: Data):
     Task for getting the race schedule from the API
     It runs on every monday
     """
-    next_run_datetime = datetime.datetime.now()
+    data.set_task_next_run(
+        task_name='get_event_schedule',
+        next_run=datetime.datetime.now()
+    )
     
     while 1:
+        next_run_datetime = data.get_task_next_run('get_event_schedule')
         if next_run_datetime != None and next_run_datetime <= datetime.datetime.now():
             _get_event_schedule(data)
             # set next run time to next monday
             next_run_datetime = datetime.datetime.now() + datetime.timedelta(days=7-datetime.datetime.now().weekday())
+
+            data.set_task_next_run(
+                task_name='get_event_schedule',
+                next_run=next_run_datetime
+            )
 
         time.sleep(10)
 
@@ -135,7 +158,8 @@ def _get_event_schedule(data: Data):
 
     # HTTP request to API
     try:
-        response = requests.get(data.env_data["f1_api"]["base_url"] + data.env_data["f1_api"]["schedule"])
+        f1api_data = data.get_env_variable("f1_api")
+        response = requests.get(f1api_data["base_url"] + f1api_data["schedule"])
         schedule = response.json()['MRData']['RaceTable']
         schedule['data'] = schedule
 
