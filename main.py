@@ -2,6 +2,7 @@ import discord
 import sys
 from threading import Thread
 import tasks, data
+import asyncio
 
 if sys.version_info < (3, 10):
     print('Please upgrade your Python version to 3.10 or higher')
@@ -20,6 +21,7 @@ client = discord.Client()
 async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="/F1"))
     print(f'Client is ready')
+    init_scheduling()
 
 
 
@@ -51,9 +53,7 @@ async def on_message(message):
                 "**/f1 config [setting] [value]** - Configure the bot \n"
                     "\t The **setting** can be: \n"
                     "\t   *channel* - Which channel should the bot send the schedule to \n"
-                    "\t   *pin* - Should the bot pin the message (true or false) \n"
                     "\t   *stream-url* - The url where the race can be streamed \n"
-                    "\t   *alert* - Users to alert about upcoming events (eg: user1,user2) \n"
                     "\t   *drivers* - List of drivers-of-interest (eg: BOT,PER) \n"
                 "**/f1 current-config** - Shows the currently saved configuration"
                 "**/f1 status** - Provides the status of the synced data"
@@ -61,7 +61,7 @@ async def on_message(message):
 
             case 'about':
                 await message.channel.send(
-                    "made by **blaczko#0134**\n"
+                    "made by **blaczko**\n"
                     "https://github.com/laczbali/f1-discord"
                 )
         
@@ -70,7 +70,7 @@ async def on_message(message):
                     await message.channel.send('Please provide a setting and a value')
                     return
 
-                if content_arr[1] not in ['channel', 'pin', 'stream-url', 'alert', 'drivers']:
+                if content_arr[1] not in ['channel', 'stream-url', 'alert', 'drivers']:
                     await message.channel.send('Please provide a valid setting')
                     return
 
@@ -112,11 +112,11 @@ def init_scheduling():
     """
     Starts the scheduling process, which will periodically get the data from the API, and run relevant functions
     """
-    
     Thread(target=tasks.get_event_schedule, name="EventSchedule", daemon=True, args=[data_cont]).start()
     Thread(target=tasks.get_driver_standings, name="DriverStandings", daemon=True).start()
     Thread(target=tasks.get_race_results, name="RaceResults", daemon=True).start()
-    Thread(target=tasks.post_messages, name="PostMessages", daemon=True, args=[data_cont]).start()
+    
+    client.loop.create_task(tasks.post_messages(data_cont, client))
 
 
 
@@ -125,5 +125,4 @@ def init_scheduling():
 data_cont = data.Data()
 
 if __name__ == "__main__":
-    init_scheduling()
     run()
