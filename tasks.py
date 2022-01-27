@@ -40,6 +40,12 @@ async def post_messages(data: Data, client: Client):
                 case ('week_start' | 'after_event'):
                     # set next run time to earlier of: before next event, next tuesday
                     nextevent = data.get_next_event()
+                    if nextevent == None:
+                        print("No next events")
+                        next_run_datetime = datetime.datetime.now() + datetime.timedelta(days=8-datetime.datetime.now().weekday())
+                        next_run_type = 'week_start'
+                        break
+
                     before_next_event = datetime.datetime.fromisoformat(nextevent['date'] + 'T' + nextevent['time'][:-1]) - datetime.timedelta(hours=1)
                     next_tuesday = datetime.datetime.now() + datetime.timedelta(days=8-datetime.datetime.now().weekday())
 
@@ -51,6 +57,12 @@ async def post_messages(data: Data, client: Client):
                     # set next run time to after next event
                     next_run_type = 'after_event'
                     nextevent = data.get_next_event()
+                    if nextevent == None:
+                        print("No next events")
+                        next_run_datetime = datetime.datetime.now() + datetime.timedelta(days=8-datetime.datetime.now().weekday())
+                        next_run_type = 'week_start'
+                        break
+
                     next_run_datetime = datetime.datetime.fromisoformat(nextevent['date'] + 'T' + nextevent['time'][:-1]) + datetime.timedelta(hours=1)
 
                 case _:
@@ -65,6 +77,7 @@ async def post_messages(data: Data, client: Client):
                 args = {'next_run_type': next_run_type}
             )               
 
+        print("await")
         await asyncio.sleep(10)
 
 
@@ -99,6 +112,9 @@ async def _post_messages(data: Data, client: Client, run_type):
             if run_type == 'week_start' or run_type == 'before_event':
                 # display next event date and time
                 nextevent = data.get_next_event()
+                if nextevent == None:
+                    break
+
                 nextevent_date = datetime.datetime.fromisoformat(nextevent['date'] + 'T' + nextevent['time'][:-1])
                 if datetime.datetime.now()+datetime.timedelta(days=7) < nextevent_date:
                     message = f"**No events this week.** Next event is {nextevent['raceName']} on {nextevent['date']} at {nextevent['time'][:-4]}\n\n"

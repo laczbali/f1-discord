@@ -25,10 +25,13 @@ class Data():
     }
 
     def get_next_event(self):
-        events = self.schedule_info['data']['Races']
-        # filter out past events
-        upcoming = list(filter(lambda e: datetime.fromisoformat(e['date'] + 'T' + e['time'][:-1]) >= datetime.now(), events))
-        return upcoming[0]
+        try:
+            events = self.schedule_info['data']['Races']
+            # filter out past events
+            upcoming = list(filter(lambda e: datetime.fromisoformat(e['date'] + 'T' + e['time'][:-1]) >= datetime.now(), events))
+            return upcoming[0] if len(upcoming) > 1 else None
+        except:
+            return None
 
     # -----------------------------------------------------------------------------
 
