@@ -3,6 +3,7 @@ __pycache__
 env.json
 user_config.json
 tasks.json
+schedule.json
 
 !.vscode/tasks.json
 !.vscode/tag.bat
