@@ -10,6 +10,12 @@ from discord.channel import TextChannel
 from helpers import Helpers
 
 async def task_race_reminder(client: Client):
+    """
+    Posts a message about upcoming races.
+
+    Runs every tuesday, and a few hours before every race.
+    """
+
     # Wait with first run, so the schedule has time to load
     await asyncio.sleep(5)
 
@@ -45,14 +51,18 @@ async def _race_remidner(client: Client, next_event):
         configs = json.load(configfile)
         configfile.close()
 
+        # if the bot is configured for multiple servers, itarate through them
         for conf in configs:
             server : guild.Guild = client.get_guild(conf['server_id'])
             channel : TextChannel = discord.utils.get(server.text_channels, name=conf['channel'])
 
             next_event_date = Helpers.get_event_utc_datetime(next_event)
+
             if datetime.datetime.now()+datetime.timedelta(days=7) < next_event_date:
+                # no events in the next 7 days
                 message = f"**No events this week.** Next event is {next_event['raceName']} on {next_event_date.date()} at {next_event_date.time()}\n\n"
             else:
+                # there is an event in the next 7 days
                 message = f"This week is **{next_event['raceName']}** on **{next_event_date.date()}** at **{next_event_date.time()}**\n\n"
                 stream_url = Helpers.get_env_var("stream_url")
                 message += f"Watch at {stream_url}\n\n"

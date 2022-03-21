@@ -6,6 +6,12 @@ import requests
 
 
 def task_get_schedule():
+    """
+    Gets the schedule for the current season, stores it as schedule.json
+    
+    Runs every monday.
+    """
+
     # guaranteed run at startup
     Helpers.set_task_next_run(
         task_name='get_event_schedule',
