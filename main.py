@@ -3,6 +3,9 @@ from client_wrapper import ClientWrapper
 from tasks.get_schedule import task_get_schedule
 from tasks.race_reminder import task_race_reminder
 
+# TODO: stream_url, timezone and reminder_hours_before_event should be user configs, instead of env vars
+# TODO: query and post quali results, after they are available
+
 def main():
     # set up tasks
     Thread(target=task_get_schedule, name="get_schedule", daemon=True).start()
