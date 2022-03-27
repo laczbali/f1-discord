@@ -37,7 +37,11 @@ async def task_race_reminder(client: Client):
             before_next_event = Helpers.get_event_utc_datetime(next_event) - datetime.timedelta(hours=Helpers.get_env_var("reminder_hours_before_event"))
             next_tuesday = datetime.datetime.now() + datetime.timedelta(days=(7 - datetime.datetime.now().weekday()) % 7 + 1)
 
-            next_run_datetime = min(before_next_event, next_tuesday)
+            if before_next_event < datetime.datetime.now():
+                next_run_datetime = next_tuesday
+            else:
+                next_run_datetime = min(before_next_event, next_tuesday)
+                
             Helpers.set_task_next_run(
                 task_name='race_reminder',
                 next_run=next_run_datetime
