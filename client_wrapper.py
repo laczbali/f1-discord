@@ -37,6 +37,7 @@ class ClientWrapper:
                         "**/f1 config [setting] [value]** - Configure the bot \n"
                         "\t The **setting** can be: \n"
                         "\t   *channel* - Which channel should the bot send the schedule to \n"
+                        "**/f1 next** - Show the next upcoming race \n"
                     )
 
                 case 'about':
@@ -58,8 +59,14 @@ class ClientWrapper:
                         # Channel changed, update it right away
                         Helpers.force_race_reminder()
 
+                case 'next':
+                    next_event = Helpers.get_next_event()
+                    next_event_datetime = Helpers.get_event_utc_datetime(next_event)
+                    message = f"The next race is **{next_event['raceName']}** on **{next_event_datetime.date()}** at **{next_event_datetime.time()}**"
+                    await message.channel.send(message)
+
                 case _:
-                    await message.channel.send("Unknown command")
+                    await message.channel.send("Unknown command, type **/f1 help** for more information.")
 
         except:
             await message.channel.send("Something went wrong")
