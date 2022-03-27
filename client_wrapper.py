@@ -62,8 +62,8 @@ class ClientWrapper:
                 case 'next':
                     next_event = Helpers.get_next_event()
                     next_event_datetime = Helpers.get_event_utc_datetime(next_event)
-                    message = f"The next race is **{next_event['raceName']}** on **{next_event_datetime.date()}** at **{next_event_datetime.time()}**"
-                    await message.channel.send(message)
+                    response = f"The next race is **{next_event['raceName']}** on **{next_event_datetime.date()}** at **{next_event_datetime.time()}**"
+                    await message.channel.send(response)
 
                 case _:
                     await message.channel.send("Unknown command, type **/f1 help** for more information.")
