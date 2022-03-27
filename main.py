@@ -6,6 +6,7 @@ from tasks.race_reminder import task_race_reminder
 # TODO: stream_url, timezone and reminder_hours_before_event should be user configs, instead of env vars
 # TODO: query and post quali results, after they are available
 # TODO: only force-update the guild that has its channel changed
+# TODO: get next event should convert the datetime by default
 
 def main():
     # set up tasks
