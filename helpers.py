@@ -42,7 +42,11 @@ class Helpers:
         try:
             events = json.load(open("schedule.json", "r"))
             # filter out past events
-            upcoming = list(filter(lambda e: datetime.datetime.fromisoformat(e['date'] + 'T' + e['time'][:-1]) >= datetime.datetime.now(), events))
+            upcoming = list(
+                filter(lambda e:
+                    Helpers.get_event_utc_datetime(e) >= datetime.datetime.now(), events
+                )
+            )
             return upcoming[0] if len(upcoming) > 1 else None
         except:
             return None
