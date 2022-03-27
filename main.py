@@ -7,6 +7,8 @@ from tasks.race_reminder import task_race_reminder
 # TODO: query and post quali results, after they are available
 # TODO: only force-update the guild that has its channel changed
 # TODO: get next event should convert the datetime by default
+# TODO: ability to query previous race results
+# TODO: ability to query driver / constructor standings
 
 def main():
     # set up tasks
